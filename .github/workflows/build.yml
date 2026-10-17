@@ -12,8 +12,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Unpack zip
-        run: unzip -o -q gosms_app_final.zip
+      - name: Unpack zip if present
+        run: |
+          python3 - << 'EOF'
+          import zipfile, os
+          if os.path.exists("gosms_app_final.zip"):
+              with zipfile.ZipFile("gosms_app_final.zip") as z:
+                  for m in z.infolist():
+                      target = m.filename.replace("\\", "/")
+                      if target.endswith("/"):
+                          os.makedirs(target, exist_ok=True)
+                      else:
+                          parent = os.path.dirname(target)
+                          if parent:
+                              os.makedirs(parent, exist_ok=True)
+                          with z.open(m) as src, open(target, "wb") as dst:
+                              dst.write(src.read())
+              print("Extraction completed successfully.")
+          EOF
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
