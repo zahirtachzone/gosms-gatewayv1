@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Unpack zip if present
         run: |
           python3 - << 'EOF'
@@ -30,13 +31,16 @@ jobs:
                               dst.write(src.read())
               print("Extraction completed successfully.")
           EOF
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
+
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10.2'
+
       - name: Configure Android SDK and Accept Licenses
         run: |
           mkdir -p "$ANDROID_HOME/licenses"
@@ -44,6 +48,7 @@ jobs:
           printf "84831b9409646a53fe443e8ea8269e5ede0840e6\n" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
           yes | $ANDROID_HOME/cmdline-tools/*/bin/sdkmanager --licenses 2>/dev/null || true
           echo "sdk.dir=$ANDROID_HOME" > local.properties
+
       - name: Build debug APK
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
@@ -57,13 +62,22 @@ jobs:
             echo "================================================================"
             exit 1
           }
+
       - name: Upload build log on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: build-failure-log
           path: build_log.txt
-      - uses: actions/upload-artifact@v4
+
+      - name: Locate APK files
+        run: |
+          echo "Looking for built APKs:"
+          find . -name "*.apk" -ls
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
           name: GoSMS-Gateway-debug
-          path: app/build/outputs/apk/debug/*.apk
+          path: '**/*.apk'
+          if-no-files-found: error
