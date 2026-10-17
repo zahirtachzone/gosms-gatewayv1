@@ -37,13 +37,32 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10.2'
-      - name: Accept Android SDK licenses
+      - name: Configure Android SDK and Accept Licenses
         run: |
-          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses 2>/dev/null || true
+          mkdir -p "$ANDROID_HOME/licenses"
+          printf "8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb78af6dfcb131a6481e\n24333f8a63b6825ea9c5514f83c2829b004d1fee\n" > "$ANDROID_HOME/licenses/android-sdk-license"
+          printf "84831b9409646a53fe443e8ea8269e5ede0840e6\n" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
+          yes | $ANDROID_HOME/cmdline-tools/*/bin/sdkmanager --licenses 2>/dev/null || true
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
       - name: Build debug APK
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
-        run: gradle assembleDebug --stacktrace
+        run: |
+          gradle assembleDebug --stacktrace --console=plain 2>&1 | tee build_log.txt || {
+            echo "::error::Build Failed"
+            echo "================================================================"
+            echo "                CRITICAL BUILD ERROR DETAILS                    "
+            echo "================================================================"
+            grep -A 35 -B 2 "What went wrong:" build_log.txt || tail -n 60 build_log.txt
+            echo "================================================================"
+            exit 1
+          }
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-failure-log
+          path: build_log.txt
       - uses: actions/upload-artifact@v4
         with:
           name: GoSMS-Gateway-debug
