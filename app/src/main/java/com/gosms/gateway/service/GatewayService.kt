@@ -166,9 +166,9 @@ class GatewayService : Service() {
             timestamp = System.currentTimeMillis(),
             batteryPct = batteryPct,
             charging = isCharging,
-            network_type = "mobile",
-            app_version = BuildConfig.VERSION_NAME,
-            pending_count = pendingJobs.size,
+            networkType = "mobile",
+            appVersion = BuildConfig.VERSION_NAME,
+            pendingCount = pendingJobs.size,
             sims = sims
         )
 
@@ -176,10 +176,10 @@ class GatewayService : Service() {
         if (resp.isSuccessful) {
             val body = resp.body()
             if (body != null && body.ok) {
-                body.poll_interval_ms?.let {
+                body.pollIntervalMs?.let {
                     secureStorage.setPollIntervalMs(it)
                 }
-                body.max_per_minute?.let {
+                body.maxPerMinute?.let {
                     secureStorage.setMaxPerMinute(it)
                     rateLimiter.updateMaxPerMinute(it)
                 }
@@ -197,11 +197,11 @@ class GatewayService : Service() {
 
         for (job in pendingList) {
             val req = StatusReportRequest(
-                message_id = job.messageId,
-                lease_id = job.leaseId,
+                messageId = job.messageId,
+                leaseId = job.leaseId,
                 status = job.state,
-                error_code = job.errorCode,
-                error_detail = job.errorDetail,
+                errorCode = job.errorCode,
+                errorDetail = job.errorDetail,
                 parts = job.parts,
                 timestamp = job.updatedAt
             )
@@ -240,11 +240,11 @@ class GatewayService : Service() {
         for (msg in messages) {
             if (msg.deviceId != currentDeviceId) {
                 val reportReq = StatusReportRequest(
-                    message_id = msg.messageId,
-                    lease_id = msg.leaseId,
+                    messageId = msg.messageId,
+                    leaseId = msg.leaseId,
                     status = "FAILED",
-                    error_code = "DEVICE_MISMATCH",
-                    error_detail = "Target device id mismatch",
+                    errorCode = "DEVICE_MISMATCH",
+                    errorDetail = "Target device id mismatch",
                     parts = 1,
                     timestamp = System.currentTimeMillis()
                 )
@@ -255,11 +255,11 @@ class GatewayService : Service() {
             val existing = appDatabase.smsJobDao().getByMessageId(msg.messageId)
             if (existing != null) {
                 val reportReq = StatusReportRequest(
-                    message_id = existing.messageId,
-                    lease_id = existing.leaseId,
+                    messageId = existing.messageId,
+                    leaseId = existing.leaseId,
                     status = existing.state,
-                    error_code = existing.errorCode,
-                    error_detail = existing.errorDetail,
+                    errorCode = existing.errorCode,
+                    errorDetail = existing.errorDetail,
                     parts = existing.parts,
                     timestamp = existing.updatedAt
                 )

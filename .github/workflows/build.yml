@@ -50,6 +50,7 @@ jobs:
           echo "sdk.dir=$ANDROID_HOME" > local.properties
 
       - name: Build debug APK
+        shell: bash
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
         run: |
